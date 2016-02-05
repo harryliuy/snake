@@ -1,1 +1,187 @@
-123
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>无标题文档</title>
+<style>  
+#mapbox {  
+  font-family: 宋体; font-size: 17px; line-height:100%;  
+  height:360; width:430;  
+}  
+  #tips{display:none;}
+</style> 
+</head>
+<script>
+
+var o = {
+	map:null,
+	running:null,
+	stage:null,
+	timer:150,
+	score:0,
+	level:1,
+	pause:false,
+}
+function play(){
+	clearInterval(o.running);
+	o.map = new Map(30,20);
+	document.onkeydown = Keydown;
+	o.score = 0;
+	o.level = 1;
+	o.map.stage.fan.innerHTML = o.score;
+	o.map.stage.idstage.innerHTML = o.level;
+	o.running = setInterval('o.map.snake.go()',o.timer);
+}
+
+function Keydown(e){
+	e = e || event;
+	switch(e.keyCode){
+		case 38:o.map.snake.directfun(0);break;
+		case 39:o.map.snake.directfun(1);break;
+		case 40:o.map.snake.directfun(2);break;
+		case 37:o.map.snake.directfun(3);break;
+	}
+}
+function Map(x,y){
+	this.x = x;
+	this.y = y;
+	this.out = '◆';
+	this.in = '　';
+	this.arr = [];
+	for(var i =0; i< this.y;i++){
+		this.arr[i] = [];
+		for(var j = 0; j< this.x;j++){
+			if(i==0||i==this.y-1||j==0||j==this.x-1){
+				this.arr[i][j] = this.out;
+			}else{
+				this.arr[i][j] = this.in;
+			}
+		}
+	}
+	this.snake = new Snake(this);
+	this.bean = new Bean(this);
+	this.bean.newbean();
+	this.stage = new Stage();
+}
+Map.prototype.write = function(){
+	var con = ''; 
+	var mapbox = document.getElementById('mapbox');
+	for(var i=0; i<this.y;i++){
+		con +='<br>';
+		for(var j = 0; j< this.x;j++){
+			con += this.arr[i][j];
+		}
+	}
+	mapbox.innerHTML = con;
+}
+
+function Snake(lev){
+	this.body = '●';
+	this.pos = [];
+	this.bodylength = 4;
+	this.direct = 1;
+	this.pos[0] = {x:3,y:5};
+	this.lev = lev;
+}
+
+Snake.prototype.go = function(){
+	var x = this.pos[0].x + [0,1,0,-1][this.direct];
+	var y = this.pos[0].y + [-1,0,1,0][this.direct];
+	if(this.lev.arr[y][x] != this.lev.in && this.lev.arr[y][x] != this.lev.bean.body || this.lev.arr[y][x] == this.body){
+		clearInterval(o.running);
+		alert('game over!');
+		o.timer = 150;
+		return;
+	}
+	if(this.lev.arr[y][x] == this.lev.bean.body){
+		this.bodylength++;
+		this.lev.bean.newbean();
+		this.lev.stage.getscore();
+	}
+	
+	this.lev.arr[y][x] = this.body;
+	this.pos = [].concat({x:x,y:y},this.pos);
+	
+	if(this.pos.length > this.bodylength){
+		var delbody = this.pos.pop();
+		this.lev.arr[delbody.y][delbody.x] = this.lev.in;
+	}
+	if(o.pause){
+		clearInterval(o.running);
+	}
+	this.lev.write();
+}
+Snake.prototype.directfun = function(n){
+	if((this.direct+n)%2 !=0){
+		return this.direct = n;
+	}
+}
+
+function Bean(lev){
+	this.body = '○';
+	this.lev = lev;
+}
+Bean.prototype.newbean = function(){
+	var x = Math.floor(Math.random()*(this.lev.x-2))+1;
+	var y = Math.floor(Math.random()*(this.lev.y-2))+1;
+	if(this.lev.arr[y][x] == this.lev.in){
+		this.lev.arr[y][x] = this.body;
+	}else{
+		this.newbean();
+	}
+}
+
+
+
+function Stage(){
+	this.fan = document.getElementById('fan');
+	this.step = 0;
+	this.idstage = document.getElementById('stage');
+	this.tips = document.getElementById('tips');
+}
+
+Stage.prototype.getscore = function(){
+	o.score += 100;
+	this.step ++;
+	this.fan.innerHTML = o.score;
+	var that = this;
+	if(this.step >= 5){
+		o.level++;
+		this.step = 0;
+		this.idstage.innerHTML = o.level;
+		this.tips.style.display ='block';
+		o.pause = true;
+		setTimeout(function(){
+			o.pause = false;
+			that.nextstage();
+			that.tips.style.display = 'none';
+		},1000)
+	}
+}
+
+Stage.prototype.nextstage = function(){
+	clearInterval(o.running);
+	o.timer -= 20;
+	o.map = new Map(30,20);
+	o.running = setInterval('o.map.snake.go()',o.timer);
+}
+
+</script>
+<body>
+<center>  
+<h2>贪吃蛇</h2><hr> 
+<div id="mapbox"></div>  
+第 <span id="stage">1</span> 关 <input type="button" value="开始" onclick="play()"> 得分：<span id="fan">0</span>  
+<h3 id="tips">下一关</h3> 
+<hr>  
+</center>  
+</body>
+</html>
+
+
+
+
+
+
+
+
